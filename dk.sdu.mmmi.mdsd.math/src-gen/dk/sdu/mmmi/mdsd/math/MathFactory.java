@@ -24,6 +24,33 @@ public interface MathFactory extends EFactory
   MathFactory eINSTANCE = dk.sdu.mmmi.mdsd.math.impl.MathFactoryImpl.init();
 
   /**
+   * Returns a new object of class '<em>Program</em>'.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @return a new object of class '<em>Program</em>'.
+   * @generated
+   */
+  Program createProgram();
+
+  /**
+   * Returns a new object of class '<em>External</em>'.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @return a new object of class '<em>External</em>'.
+   * @generated
+   */
+  External createExternal();
+
+  /**
+   * Returns a new object of class '<em>External Use</em>'.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @return a new object of class '<em>External Use</em>'.
+   * @generated
+   */
+  ExternalUse createExternalUse();
+
+  /**
    * Returns a new object of class '<em>Exp</em>'.
    * <!-- begin-user-doc -->
    * <!-- end-user-doc -->
@@ -49,6 +76,15 @@ public interface MathFactory extends EFactory
    * @generated
    */
   Expression createExpression();
+
+  /**
+   * Returns a new object of class '<em>Parentheses</em>'.
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @return a new object of class '<em>Parentheses</em>'.
+   * @generated
+   */
+  Parentheses createParentheses();
 
   /**
    * Returns a new object of class '<em>Let Binding</em>'.

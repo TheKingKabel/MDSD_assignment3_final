@@ -12,6 +12,7 @@ import dk.sdu.mmmi.mdsd.math.Mult
 import dk.sdu.mmmi.mdsd.math.Plus
 import dk.sdu.mmmi.mdsd.math.VarBinding
 import dk.sdu.mmmi.mdsd.math.VariableUse
+import dk.sdu.mmmi.mdsd.math.Parentheses
 import java.util.HashMap
 import java.util.Map
 import javax.swing.JOptionPane
@@ -19,6 +20,11 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
+import dk.sdu.mmmi.mdsd.math.Program
+import dk.sdu.mmmi.mdsd.math.External
+import dk.sdu.mmmi.mdsd.math.ExternalUse
+import java.util.ArrayList
+import java.util.LinkedHashMap
 
 /**
  * Generates code from your model files on save.
@@ -27,72 +33,158 @@ import org.eclipse.xtext.generator.IGeneratorContext
  */
 class MathGenerator extends AbstractGenerator {
 	
-	static Map<String, Integer> variables;
+	static Map<String, String> variables;
+	static Map<String, String> externals;
+	static String pkgName = "math_expression";
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-		val math = resource.allContents.filter(MathExp).next
-		val result = math.compute
-		result.displayPanel
+		val p = resource.allContents.filter(Program).next;
+		val m = resource.allContents.filter(MathExp).next;
 		
-	}
+		AssignMaps(m, p);
 		
-	def void displayPanel(Map<String, Integer> result) {
-		var resultString = ""
-		for (entry : result.entrySet()) {
-         	resultString += "var " + entry.getKey() + " = " + entry.getValue() + "\n"
-        }
-		
-		JOptionPane.showMessageDialog(null, resultString ,"Math Language", JOptionPane.INFORMATION_MESSAGE)
+		generateMathFile(p, pkgName, fsa);
 	}
 	
-	def static compute(MathExp math) {
-		variables = new HashMap()
-		for(varBinding: math.variables)
-			varBinding.computeExpression()
-		variables
+	def AssignMaps(MathExp m, Program p) {
+		variables = new LinkedHashMap();
+		for(vb: m.variables) {
+			vb.computeExpression();
+		}
+		externals = new LinkedHashMap();
+		for(ext:p.externals) {
+			ext.computeExternals();
+		}
 	}
 	
-	def static dispatch int computeExpression(VarBinding binding) {
+	def computeExternals(External ext) {
+		if(!externals.containsKey(ext.name)){
+			var argString = "(";
+			var argCount = 0;
+			for(arg:ext.args) {
+				argCount +=1;
+				if(argCount > 1) {
+					argString += ", ";
+				}
+				argString += "int n" + argCount.toString();
+			}
+			argString += ')'
+			externals.put(ext.name, argString)
+		}
+	}
+	
+	
+	def generateMathFile(Program p, String pkgName, IFileSystemAccess2 fsa) {
+		fsa.generateFile(pkgName+"/"+p.name.toFirstUpper+".java",p.generateMath(pkgName))
+	}
+	
+	def generateMath(Program p, String pkgName) {
+		
+		var variablesList = variables !== null ? new ArrayList(variables.entrySet()) : new ArrayList()
+		var externalsList = externals !== null ? new ArrayList(externals.entrySet()) : new ArrayList()
+		
+	
+	'''
+	// Automatically generated file, do not edit
+	package «pkgName»;
+	
+	import java.util.*;
+		
+	public class «p.name» {
+		«FOR v: variablesList»
+		public int «v.key»;
+		«ENDFOR»
+		
+		«IF !p.externals.nullOrEmpty»
+			public External external;
+			
+			public «p.name»(External external) {
+				this.external = external;
+			}
+		«ENDIF»
+		
+		public void compute() {
+			«FOR v: variablesList»
+			«v.key» = «v.value»;
+			«ENDFOR»
+		}
+			
+		«IF !p.externals.nullOrEmpty»
+			public interface External {
+				«FOR ext: externalsList»
+					public int «ext.key»«ext.value»;
+				«ENDFOR»
+			}
+		«ENDIF»
+	}
+	'''
+	}
+	
+	//def static compute(MathExp math) {
+	//	variables = new HashMap()
+	//	for(varBinding: math.variables)
+	//		varBinding.computeExpression()
+	//	variables
+	//}
+	
+	def static dispatch String computeExpression(ExternalUse ext)  {
+		var argString = "this.external." + ext.ref.name + '('
+		var argCount = 0
+		for(arg:ext.args) {
+			argCount +=1
+			if(argCount > 1) {
+				argString += ", "
+			}
+			argString += arg.computeExpression
+		}
+		argString += ')'
+	}
+	
+	def static dispatch String computeExpression(Parentheses exp) {
+		'(' + exp.exp.computeExpression + ')'
+	}
+	
+	def static dispatch String computeExpression(VarBinding binding) {
 		variables.put(binding.name, binding.expression.computeExpression())
 		return variables.get(binding.name)
 	}
 	
-	def static dispatch int computeExpression(MathNumber exp) {
-		exp.value
+	def static dispatch String computeExpression(MathNumber exp) {
+		exp.value.toString()
 	}
 
-	def static dispatch int computeExpression(Plus exp) {
-		exp.left.computeExpression + exp.right.computeExpression
+	def static dispatch String computeExpression(Plus exp) {
+		exp.left.computeExpression + '+' + exp.right.computeExpression
 	}
 	
-	def static dispatch int computeExpression(Minus exp) {
-		exp.left.computeExpression - exp.right.computeExpression
+	def static dispatch String computeExpression(Minus exp) {
+		exp.left.computeExpression + '-' + exp.right.computeExpression
 	}
 	
-	def static dispatch int computeExpression(Mult exp) {
-		exp.left.computeExpression * exp.right.computeExpression
+	def static dispatch String computeExpression(Mult exp) {
+		exp.left.computeExpression + '*' + exp.right.computeExpression
 	}
 	
-	def static dispatch int computeExpression(Div exp) {
-		exp.left.computeExpression / exp.right.computeExpression
+	def static dispatch String computeExpression(Div exp) {
+		exp.left.computeExpression + '/' + exp.right.computeExpression
 	}
 
-	def static dispatch int computeExpression(LetBinding exp) {
-		exp.body.computeExpression
+	def static dispatch String computeExpression(LetBinding exp) {
+		'(' + exp.body.computeExpression + ')'
 	}
 	
-	def static dispatch int computeExpression(VariableUse exp) {
-		exp.ref.computeBinding
+	def static dispatch String computeExpression(VariableUse exp) {
+		'(' + exp.ref.computeBinding + ')'
 	}
 
-	def static dispatch int computeBinding(VarBinding binding){
+	def static dispatch String computeBinding(VarBinding binding){
 		if(!variables.containsKey(binding.name))
 			binding.computeExpression()			
 		variables.get(binding.name)
 	}
 	
-	def static dispatch int computeBinding(LetBinding binding){
-		binding.binding.computeExpression
+	def static dispatch String computeBinding(LetBinding binding){
+		'(' + binding.binding.computeExpression + ')'
 	}
 	
 }

@@ -65,9 +65,13 @@ public class MathFactoryImpl extends EFactoryImpl implements MathFactory
   {
     switch (eClass.getClassifierID())
     {
+      case MathPackage.PROGRAM: return createProgram();
+      case MathPackage.EXTERNAL: return createExternal();
+      case MathPackage.EXTERNAL_USE: return createExternalUse();
       case MathPackage.MATH_EXP: return createMathExp();
       case MathPackage.VAR_BINDING: return createVarBinding();
       case MathPackage.EXPRESSION: return createExpression();
+      case MathPackage.PARENTHESES: return createParentheses();
       case MathPackage.LET_BINDING: return createLetBinding();
       case MathPackage.BINDING: return createBinding();
       case MathPackage.VARIABLE_USE: return createVariableUse();
@@ -79,6 +83,42 @@ public class MathFactoryImpl extends EFactoryImpl implements MathFactory
       default:
         throw new IllegalArgumentException("The class '" + eClass.getName() + "' is not a valid classifier");
     }
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  @Override
+  public Program createProgram()
+  {
+    ProgramImpl program = new ProgramImpl();
+    return program;
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  @Override
+  public External createExternal()
+  {
+    ExternalImpl external = new ExternalImpl();
+    return external;
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  @Override
+  public ExternalUse createExternalUse()
+  {
+    ExternalUseImpl externalUse = new ExternalUseImpl();
+    return externalUse;
   }
 
   /**
@@ -115,6 +155,18 @@ public class MathFactoryImpl extends EFactoryImpl implements MathFactory
   {
     ExpressionImpl expression = new ExpressionImpl();
     return expression;
+  }
+
+  /**
+   * <!-- begin-user-doc -->
+   * <!-- end-user-doc -->
+   * @generated
+   */
+  @Override
+  public Parentheses createParentheses()
+  {
+    ParenthesesImpl parentheses = new ParenthesesImpl();
+    return parentheses;
   }
 
   /**
